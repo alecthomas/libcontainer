@@ -7,18 +7,11 @@ import (
 	"os/exec"
 	"os/signal"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/namespaces"
 )
 
-var execCommand = cli.Command{
-	Name:   "exec",
-	Usage:  "execute a new command inside a container",
-	Action: execAction,
-}
-
-func execAction(context *cli.Context) {
+func execAction(command []string) error {
 	var nspid, exitCode int
 
 	container, err := loadContainer()
@@ -27,21 +20,22 @@ func execAction(context *cli.Context) {
 	}
 
 	if nspid, err = readPid(); err != nil && !os.IsNotExist(err) {
-		log.Fatalf("unable to read pid: %s", err)
+		return fmt.Errorf("unable to read pid: %s", err)
 	}
 
 	if nspid > 0 {
-		err = namespaces.ExecIn(container, nspid, []string(context.Args()))
+		err = namespaces.ExecIn(container, nspid, command)
 	} else {
 		term := namespaces.NewTerminal(os.Stdin, os.Stdout, os.Stderr, container.Tty)
-		exitCode, err = startContainer(container, term, dataPath, []string(context.Args()))
+		exitCode, err = startContainer(container, term, dataPath, command)
 	}
 
 	if err != nil {
-		log.Fatalf("failed to exec: %s", err)
+		return fmt.Errorf("failed to exec: %s", err)
 	}
 
 	os.Exit(exitCode)
+	return nil
 }
 
 // startContainer starts the container. Returns the exit status or -1 and an

@@ -3,31 +3,24 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups/fs"
 )
 
-var statsCommand = cli.Command{
-	Name:   "stats",
-	Usage:  "display statistics for the container",
-	Action: statsAction,
-}
-
-func statsAction(context *cli.Context) {
+func statsAction() error {
 	container, err := loadContainer()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	stats, err := getContainerStats(container)
 	if err != nil {
-		log.Fatalf("Failed to get stats - %v\n", err)
+		return fmt.Errorf("failed to get stats - %v\n", err)
 	}
 
 	fmt.Printf("Stats:\n%v\n", stats)
+	return nil
 }
 
 // returns the container stats in json format.

@@ -1,40 +1,24 @@
 package main
 
 import (
-	"log"
-	"strconv"
+	"fmt"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/libcontainer/namespaces"
 )
 
-var nsenterCommand = cli.Command{
-	Name:   "nsenter",
-	Usage:  "init process for entering an existing namespace",
-	Action: nsenterAction,
-}
-
-func nsenterAction(context *cli.Context) {
-	args := context.Args()
-	if len(args) < 4 {
-		log.Fatalf("incorrect usage: <pid> <process label> <container JSON> <cmd>...")
-	}
-
-	container, err := loadContainerFromJson(args.Get(2))
+func nsenterAction(nspid int, label, json string, cmd []string) error {
+	container, err := loadContainerFromJson(json)
 	if err != nil {
-		log.Fatalf("unable to load container: %s", err)
-	}
-
-	nspid, err := strconv.Atoi(args.Get(0))
-	if err != nil {
-		log.Fatalf("unable to read pid: %s from %q", err, args.Get(0))
+		return fmt.Errorf("unable to load container: %s", err)
 	}
 
 	if nspid <= 0 {
-		log.Fatalf("cannot enter into namespaces without valid pid: %q", nspid)
+		return fmt.Errorf("cannot enter into namespaces without valid pid: %q", nspid)
 	}
 
-	if err := namespaces.NsEnter(container, args.Get(1), nspid, args[3:]); err != nil {
-		log.Fatalf("failed to nsenter: %s", err)
+	if err := namespaces.NsEnter(container, label, nspid, cmd); err != nil {
+		return fmt.Errorf("failed to nsenter: %s", err)
 	}
+
+	return nil
 }

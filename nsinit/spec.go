@@ -3,30 +3,23 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/libcontainer"
 )
 
-var specCommand = cli.Command{
-	Name:   "spec",
-	Usage:  "display the container specification",
-	Action: specAction,
-}
-
-func specAction(context *cli.Context) {
+func specAction() error {
 	container, err := loadContainer()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	spec, err := getContainerSpec(container)
 	if err != nil {
-		log.Fatalf("Failed to get spec - %v\n", err)
+		return fmt.Errorf("Failed to get spec - %v\n", err)
 	}
 
 	fmt.Printf("Spec:\n%v\n", spec)
+	return nil
 }
 
 // returns the container spec in json format.
